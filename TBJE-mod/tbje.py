@@ -43,7 +43,8 @@ class TBJEBlock(nn.Module):
         self.aud_slf_attn = nn.MultiheadAttention(internal_dim, n_heads, batch_first=True, bias=False, dropout=.2)
         ########################################################################
 
-    def forward(self, vid_data, txt_data, aud_data):
+    def forward(self, data_tuple):
+        vid_data, txt_data, aud_data = data_tuple
         # cross attention stage
         vid_ln_out = self.vid_ln1(vid_data)
         txt_ln_out = self.txt_ln1(txt_data)
@@ -103,7 +104,8 @@ class TBJENew(nn.Module):
         self.txt_proj_ln = nn.LayerNorm(internal_dim, bias=False)
         self.aud_proj_ln = nn.LayerNorm(internal_dim, bias=False)
 
-        self.block = TBJEBlock(internal_dim, mlp_hidden_dim, n_heads)
+        self.blocks = [TBJEBlock(internal_dim, mlp_hidden_dim, n_heads) for _ in range(n_layers)]
+        self.blocks = nn.Sequential(*self.blocks)
 
         self.final_proj1 = nn.Linear(3 * internal_dim, 128, bias=False)
         self.final_proj2 = nn.Linear(128, 1, bias=False)
@@ -118,7 +120,7 @@ class TBJENew(nn.Module):
         txt_data = self.txt_proj_ln(self.txt_initial_proj(txt_data.contiguous()))
         aud_data = self.aud_proj_ln(self.aud_initial_proj(aud_data.contiguous()))
 
-        vid_data, txt_data, aud_data = self.block(vid_data, txt_data, aud_data)
+        vid_data, txt_data, aud_data = self.blocks((vid_data, txt_data, aud_data))
         vid_data = vid_data[:, -1, :]
         txt_data = txt_data[:, -1, :]
         aud_data = aud_data[:, -1, :]

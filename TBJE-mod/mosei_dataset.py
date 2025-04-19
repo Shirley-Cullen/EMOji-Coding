@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import Dataset
 import pickle
 import numpy as np
+import torch.nn.functional as F
 
 class MOSEIDataset(Dataset):
     def __init__(self, pickle_path, split, max_seqlen=50):
@@ -42,7 +43,12 @@ class MOSEIDataset(Dataset):
         return self.y.shape[0]
 
     def __getitem__(self, idx):
-        X = [torch.Tensor(X_elem[idx]) for X_elem in self.X_list]
+        X = [
+            torch.nan_to_num(
+                F.normalize(torch.Tensor(X_elem[idx]).to(dtype=torch.float64), p=2.0, dim=1, eps=1e-10)
+            ).to(dtype=torch.float32)
+            for X_elem in self.X_list
+        ]
         y = torch.Tensor(self.y[idx])
         return *X, y
 

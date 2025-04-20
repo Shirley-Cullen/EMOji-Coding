@@ -49,13 +49,13 @@ class TBJEBlock(nn.Module):
         vid_ln_out = self.vid_ln1(vid_data)
         txt_ln_out = self.txt_ln1(txt_data)
         aud_ln_out = self.aud_ln1(aud_data)
-        vid_attn_out = self.vid_cross_attn(vid_ln_out, txt_ln_out, txt_ln_out, is_causal=False)
-        txt_attn_out = self.txt_cross_attn(txt_ln_out, vid_ln_out + aud_ln_out, vid_ln_out + aud_ln_out, is_causal=False)
-        aud_attn_out = self.aud_cross_attn(aud_ln_out, txt_ln_out, txt_ln_out, is_causal=False)
+        vid_attn_out, _ = self.vid_cross_attn(vid_ln_out, txt_ln_out, txt_ln_out, is_causal=False, need_weights=False)
+        txt_attn_out, _ = self.txt_cross_attn(txt_ln_out, vid_ln_out + aud_ln_out, vid_ln_out + aud_ln_out, is_causal=False, need_weights=False)
+        aud_attn_out, _ = self.aud_cross_attn(aud_ln_out, txt_ln_out, txt_ln_out, is_causal=False, need_weights=False)
         # residual connection
-        vid_data = vid_data + vid_attn_out[0]
-        txt_data = txt_data + txt_attn_out[0]
-        aud_data = aud_data + aud_attn_out[0]
+        vid_data = vid_data + vid_attn_out
+        txt_data = txt_data + txt_attn_out
+        aud_data = aud_data + aud_attn_out
 
         # MLP stage
         vid_ln_out = self.vid_ln2(vid_data).contiguous()
@@ -73,13 +73,13 @@ class TBJEBlock(nn.Module):
         vid_ln_out = self.vid_ln3(vid_data)
         txt_ln_out = self.txt_ln3(txt_data)
         aud_ln_out = self.aud_ln3(aud_data)
-        vid_attn_out = self.vid_slf_attn(vid_ln_out, vid_ln_out, vid_ln_out, is_causal=False)
-        txt_attn_out = self.txt_slf_attn(txt_ln_out, txt_ln_out, txt_ln_out, is_causal=False)
-        aud_attn_out = self.aud_slf_attn(aud_ln_out, aud_ln_out, aud_ln_out, is_causal=False)
+        vid_attn_out, _ = self.vid_slf_attn(vid_ln_out, vid_ln_out, vid_ln_out, is_causal=False, need_weights=False)
+        txt_attn_out, _ = self.txt_slf_attn(txt_ln_out, txt_ln_out, txt_ln_out, is_causal=False, need_weights=False)
+        aud_attn_out, _ = self.aud_slf_attn(aud_ln_out, aud_ln_out, aud_ln_out, is_causal=False, need_weights=False)
         # residual connection
-        vid_data = vid_data + vid_attn_out[0]
-        txt_data = txt_data + txt_attn_out[0]
-        aud_data = aud_data + aud_attn_out[0]
+        vid_data = vid_data + vid_attn_out
+        txt_data = txt_data + txt_attn_out
+        aud_data = aud_data + aud_attn_out
 
         return vid_data, txt_data, aud_data
 
